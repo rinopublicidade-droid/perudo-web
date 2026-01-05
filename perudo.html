@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Perudo (online simples)</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#121824; --muted:#9fb0c7; --text:#e8f0ff; --acc:#5eead4; --danger:#ff6b6b; --ok:#7CFF7C; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:linear-gradient(180deg,#07101a,#0b0f14); color:var(--text); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:12px; }
+    .card { background: rgba(18,24,36,.9); border:1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    input, button, select {
+      border-radius: 12px; border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06); color: var(--text);
+      padding: 10px 12px; font-size: 16px;
+    }
+    input::placeholder { color: rgba(255,255,255,.45); }
+    button { cursor:pointer; background: rgba(94,234,212,.12); border-color: rgba(94,234,212,.35); }
+    button.primary { background: rgba(94,234,212,.22); }
+    button.danger { background: rgba(255,107,107,.14); border-color: rgba(255,107,107,.35); }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .muted { color: var(--muted); font-size: 13px; line-height:1.35; }
+    .pill { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); font-size: 13px; }
+    .log { max-height: 220px; overflow:auto; font-size: 14px; }
+    .log div { padding: 8px 0; border-bottom:1px solid rgba(255,255,255,.06); }
+    .dice { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .die { width:36px; height:36px; border-radius: 10px; display:flex; align-items:center; justify-content:center; font-weight:700;
+      background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+    }
+    .two { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media(min-width: 900px){ .two{ grid-template-columns: 1.05fr .95fr; } }
+    .small { font-size: 12px; color: rgba(255,255,255,.65); }
+    .ok { color: var(--ok); }
+    .dangerText { color: var(--danger); }
+    a { color: var(--acc); text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🎲 Perudo — sala online simples</h1>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div class="row">
+            <span class="pill" id="roomPill">Sala: —</span>
+            <span class="pill" id="mePill">Você: —</span>
+            <span class="pill" id="turnPill">Vez: —</span>
+          </div>
+          <button id="copyLinkBtn" class="primary" disabled>Copiar link da sala</button>
+        </div>
+        <div class="muted" style="margin-top:10px">
+          Regras implementadas: <b>lances</b> (quantidade + face), <b>DUDO</b> (duvidar), perde 1 dado, elimina em 0.
+          <br/>Simplificação: <b>1 é coringa</b> sempre (não tem Palifico/Calza aqui).
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="card">
+          <h2 style="margin:0 0 10px; font-size:16px">Entrar / Criar sala</h2>
+          <div class="row">
+            <input id="nameInput" placeholder="Seu nome" maxlength="18" />
+            <button id="createBtn" class="primary">Criar sala</button>
+            <input id="roomInput" placeholder="Código da sala (opcional)" maxlength="8" />
+            <button id="joinBtn">Entrar</button>
+          </div>
+          <div class="muted" style="margin-top:10px">
+            Dica: ao criar, você vira <b>host</b>. Depois clique em <b>Iniciar jogo</b>.
+          </div>
+
+          <div style="margin-top:14px" class="row">
+            <button id="startBtn" class="primary" disabled>Iniciar jogo</button>
+            <button id="resetBtn" class="danger" disabled>Resetar sala</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 10px; font-size:16px">Jogadores</h2>
+          <div id="playersList" class="muted">—</div>
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="card">
+          <h2 style="margin:0 0 10px; font-size:16px">Sua mão (secreta)</h2>
+          <div class="row">
+            <button id="rollBtn" class="primary" disabled>Rolar meus dados</button>
+            <span class="small" id="diceCountInfo">—</span>
+          </div>
+          <div class="dice" id="myDice"></div>
+          <div class="muted" style="margin-top:8px">
+            Seus dados ficam <b>visíveis só pra você</b>. O resto do mundo só vê quando alguém dá DUDO.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 10px; font-size:16px">Aposta (lance)</h2>
+          <div class="row">
+            <select id="qtySel" disabled></select>
+            <select id="faceSel" disabled>
+              <option value="2">Face 2</option>
+              <option value="3">Face 3</option>
+              <option value="4">Face 4</option>
+              <option value="5">Face 5</option>
+              <option value="6">Face 6</option>
+            </select>
+            <button id="bidBtn" class="primary" disabled>Dar lance</button>
+            <button id="dudoBtn" class="danger" disabled>DUDO!</button>
+          </div>
+          <div class="muted" style="margin-top:10px" id="lastBidInfo">Último lance: —</div>
+          <div class="muted" style="margin-top:6px">
+            Lance válido precisa ser <b>maior</b> que o anterior (ou mais quantidade, ou mesma quantidade com face maior).
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:16px">Log</h2>
+        <div class="log" id="log"></div>
+      </div>
+
+      <div class="card">
+        <div class="muted">
+          ⚙️ Para funcionar “de verdade” online, este HTML usa Firebase Firestore.  
+          Se você quiser, eu adapto pra funcionar com um <b>servidorzinho Node</b> também.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase (CDN) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import {
+      getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
+      collection, getDocs, deleteDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // =========================
+    // 1) COLE AQUI SEU firebaseConfig
+    // =========================
+    const firebaseConfig = {
+      // apiKey: "...",
+      // authDomain: "...",
+      // projectId: "...",
+      // storageBucket: "...",
+      // messagingSenderId: "...",
+      // appId: "..."
+    };
+
+    // Segurança: trava se não colar config
+    const missing = !firebaseConfig || !firebaseConfig.projectId;
+    if (missing) {
+      alert("Você precisa colar seu firebaseConfig dentro do HTML (veja o bloco indicado).");
+    }
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ===== Helpers =====
+    const $ = (id) => document.getElementById(id);
+    const rand = (n) => Math.floor(Math.random() * n);
+    const rid = (len=6) => Array.from({length:len}, () => "ABCDEFGHJKMNPQRSTUVXYZ23456789"[rand(30)]).join("");
+    const nowISO = () => new Date().toISOString();
+
+    function pushLog(text) {
+      const el = $("log");
+      const line = document.createElement("div");
+      line.textContent = text;
+      el.prepend(line);
+    }
+
+    function renderDice(arr) {
+      const box = $("myDice");
+      box.innerHTML = "";
+      arr.forEach(v => {
+        const d = document.createElement("div");
+        d.className = "die";
+        d.textContent = v;
+        box.appendChild(d);
+      });
+    }
+
+    function higherThan(prev, next) {
+      // prev/next: {qty, face}
+      if (!prev) return true;
+      if (next.qty > prev.qty) return true;
+      if (next.qty === prev.qty && next.face > prev.face) return true;
+      return false;
+    }
+
+    function countTotalDice(players) {
+      return Object.values(players).reduce((acc,p) => acc + (p.diceCount||0), 0);
+    }
+
+    function countBid(players, bid) {
+      // ones are wild always (simplification)
+      const face = bid.face;
+      let total = 0;
+      for (const p of Object.values(players)) {
+        const dice = p.lastRoll || [];
+        for (const v of dice) {
+          if (v === 1) total++;
+          else if (v === face) total++;
+        }
+      }
+      return total;
+    }
+
+    // ===== State =====
+    let roomId = null;
+    let meId = localStorage.getItem("perudo_meId") || crypto.randomUUID();
+    localStorage.setItem("perudo_meId", meId);
+
+    let unsub = null;
+
+    function roomRef() { return doc(db, "perudo_rooms", roomId); }
+    function playerRef(pid) { return doc(db, "perudo_rooms", roomId, "players", pid); }
+    function playersCol() { return collection(db, "perudo_rooms", roomId, "players"); }
+
+    async function ensureRoomExists(newRoomId) {
+      roomId = newRoomId;
+      $("roomPill").textContent = "Sala: " + roomId;
+      const snap = await getDoc(roomRef());
+      if (!snap.exists()) {
+        await setDoc(roomRef(), {
+          createdAt: serverTimestamp(),
+          hostId: meId,
+          status: "lobby", // lobby | playing
+          turnOrder: [],
+          turnIndex: 0,
+          round: 0,
+          lastBid: null,
+          lastBidBy: null,
+          reveal: false,
+          lastActionAt: nowISO()
+        });
+      }
+    }
+
+    async function joinRoom() {
+      const name = $("nameInput").value.trim();
+      if (!name) return alert("Digite seu nome.");
+      if (!roomId) return alert("Sala inválida.");
+
+      // cria/atualiza player
+      await setDoc(playerRef(meId), {
+        id: meId,
+        name,
+        diceCount: 5,
+        lastRoll: [],
+        alive: true,
+        joinedAt: serverTimestamp()
+      }, { merge: true });
+
+      $("mePill").textContent = "Você: " + name;
+
+      // atualiza querystring
+      const url = new URL(location.href);
+      url.searchParams.set("room", roomId);
+      history.replaceState({}, "", url.toString());
+
+      $("copyLinkBtn").disabled = false;
+      $("startBtn").disabled = false;
+      $("resetBtn").disabled = false;
+
+      subscribe();
+    }
+
+    async function subscribe() {
+      if (unsub) unsub();
+      unsub = onSnapshot(roomRef(), async (snap) => {
+        if (!snap.exists()) return;
+        const room = snap.data();
+
+        // players
+        const pSnap = await getDocs(playersCol());
+        const players = {};
+        pSnap.forEach(d => players[d.id] = d.data());
+
+        renderPlayers(room, players);
+        updateUI(room, players);
+      });
+    }
+
+    function renderPlayers(room, players) {
+      const list = $("playersList");
+      const entries = Object.values(players).sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      if (!entries.length) { list.textContent = "—"; return; }
+
+      const hostId = room.hostId;
+      const turnId = room.turnOrder?.[room.turnIndex] || null;
+
+      list.innerHTML = entries.map(p => {
+        const host = p.id === hostId ? " 👑" : "";
+        const turn = p.id === turnId ? " ▶️" : "";
+        const alive = p.alive ? "" : " (eliminado)";
+        return `<div>• <b>${escapeHtml(p.name||"")}</b>${host}${turn} — dados: ${p.diceCount ?? 0}${alive}</div>`;
+      }).join("");
+    }
+
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+    function updateUI(room, players) {
+      $("turnPill").textContent = "Vez: " + (players[room.turnOrder?.[room.turnIndex]]?.name || "—");
+
+      const me = players[meId];
+      const isHost = room.hostId === meId;
+      $("startBtn").disabled = !isHost || room.status !== "lobby";
+      $("resetBtn").disabled = !isHost;
+
+      const playing = room.status === "playing";
+      const myTurn = playing && room.turnOrder?.[room.turnIndex] === meId;
+
+      const myDiceCount = me?.diceCount ?? 0;
+      $("diceCountInfo").textContent = playing ? `Você tem ${myDiceCount} dado(s).` : "—";
+
+      // preencher qty
+      const maxPossible = Math.max(1, countTotalDice(players));
+      const qtySel = $("qtySel");
+      qtySel.innerHTML = "";
+      for (let i=1;i<=maxPossible;i++){
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = `Qtd ${i}`;
+        qtySel.appendChild(opt);
+      }
+
+      // habilita rolar
+      $("rollBtn").disabled = !playing || !me?.alive;
+
+      // lance/dudo só no meu turno
+      $("qtySel").disabled = !myTurn;
+      $("faceSel").disabled = !myTurn;
+      $("bidBtn").disabled = !myTurn;
+      $("dudoBtn").disabled = !myTurn || !room.lastBid; // só pode dudo se houver lance
+
+      // último lance
+      if (room.lastBid) {
+        const by = players[room.lastBidBy]?.name || "—";
+        $("lastBidInfo").innerHTML = `Último lance: <b>${room.lastBid.qty}</b> de <b>${room.lastBid.face}</b> (por <b>${escapeHtml(by)}</b>)`;
+      } else {
+        $("lastBidInfo").textContent = "Último lance: —";
+      }
+
+      // render meus dados
+      renderDice(me?.lastRoll || []);
+    }
+
+    // ===== Game actions =====
+    async function startGame() {
+      // define ordem de turno com os jogadores vivos
+      const pSnap = await getDocs(playersCol());
+      const players = [];
+      pSnap.forEach(d => players.push(d.data()));
+      const alive = players.filter(p => p.alive !== false && (p.diceCount ?? 0) > 0);
+      if (alive.length < 2) return alert("Precisa de pelo menos 2 jogadores.");
+
+      const order = alive.map(p => p.id);
+      // embaralha simples
+      for (let i=order.length-1;i>0;i--){
+        const j = rand(i+1);
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+
+      await updateDoc(roomRef(), {
+        status: "playing",
+        turnOrder: order,
+        turnIndex: 0,
+        round: 1,
+        lastBid: null,
+        lastBidBy: null,
+        reveal: false,
+        lastActionAt: nowISO()
+      });
+
+      pushLog("🎬 Jogo iniciado! Ordem sorteada.");
+    }
+
+    async function resetRoom() {
+      if (!confirm("Resetar a sala? (zera jogo e dados)")) return;
+
+      const pSnap = await getDocs(playersCol());
+      for (const d of pSnap.docs) {
+        await updateDoc(d.ref, { diceCount: 5, lastRoll: [], alive: true });
+      }
+      await updateDoc(roomRef(), {
+        status: "lobby",
+        turnOrder: [],
+        turnIndex: 0,
+        round: 0,
+        lastBid: null,
+        lastBidBy: null,
+        reveal: false,
+        lastActionAt: nowISO()
+      });
+      pushLog("♻️ Sala resetada.");
+    }
+
+    async function rollMyDice() {
+      const snap = await getDoc(playerRef(meId));
+      if (!snap.exists()) return;
+      const me = snap.data();
+      if (!me.alive || (me.diceCount ?? 0) <= 0) return;
+
+      const dice = Array.from({length: me.diceCount}, () => rand(6)+1);
+      await updateDoc(playerRef(meId), { lastRoll: dice });
+
+      pushLog("🎲 Você rolou seus dados (só você vê).");
+    }
+
+    async function bid() {
+      const roomSnap = await getDoc(roomRef());
+      const room = roomSnap.data();
+
+      // checa turno
+      const turnId = room.turnOrder?.[room.turnIndex];
+      if (turnId !== meId) return alert("Não é sua vez.");
+
+      const next = { qty: parseInt($("qtySel").value,10), face: parseInt($("faceSel").value,10) };
+      const prev = room.lastBid;
+
+      if (!higherThan(prev, next)) {
+        return alert("Lance inválido. Ele precisa ser maior que o último lance.");
+      }
+
+      await updateDoc(roomRef(), {
+        lastBid: next,
+        lastBidBy: meId,
+        reveal: false,
+        // passa a vez
+        turnIndex: (room.turnIndex + 1) % room.turnOrder.length,
+        lastActionAt: nowISO()
+      });
+
+      pushLog(`📢 ${$("mePill").textContent.replace("Você: ","")} apostou ${next.qty} de ${next.face}.`);
+    }
+
+    async function dudo() {
+      const roomSnap = await getDoc(roomRef());
+      const room = roomSnap.data();
+      const bid = room.lastBid;
+      if (!bid) return;
+
+      const turnId = room.turnOrder?.[room.turnIndex];
+      if (turnId !== meId) return alert("Não é sua vez.");
+
+      // carrega players
+      const pSnap = await getDocs(playersCol());
+      const players = {};
+      pSnap.forEach(d => players[d.id] = d.data());
+
+      const total = countBid(players, bid);
+      const bidderId = room.lastBidBy;
+      const callerId = meId;
+
+      const bidTrue = total >= bid.qty;
+
+      // Se lance era verdadeiro: quem deu DUDO perde um dado
+      // Se lance era falso: quem apostou perde um dado
+      const loserId = bidTrue ? callerId : bidderId;
+
+      // aplica perda
+      const loser = players[loserId];
+      let newCount = Math.max(0, (loser.diceCount ?? 0) - 1);
+      const eliminated = newCount === 0;
+
+      await updateDoc(playerRef(loserId), {
+        diceCount: newCount,
+        alive: !eliminated
+      });
+
+      // limpa lances e começa nova rodada: loser começa
+      // remove eliminados da ordem
+      const newPlayersSnap = await getDocs(playersCol());
+      const newPlayers = {};
+      newPlayersSnap.forEach(d => newPlayers[d.id] = d.data());
+
+      let order = room.turnOrder.slice();
+      order = order.filter(pid => (newPlayers[pid]?.alive ?? false) && (newPlayers[pid]?.diceCount ?? 0) > 0);
+
+      // se sobrou 1, fim
+      if (order.length === 1) {
+        const winnerName = newPlayers[order[0]]?.name || "Alguém";
+        await updateDoc(roomRef(), {
+          status: "lobby",
+          turnOrder: [],
+          turnIndex: 0,
+          lastBid: null,
+          lastBidBy: null,
+          reveal: true,
+          lastActionAt: nowISO()
+        });
+        pushLog(`🏆 ${winnerName} venceu! (A sala voltou ao lobby)`);
+        return;
+      }
+
+      // posiciona loser como próximo a jogar (se ele ainda estiver vivo; se não, próximo na lista)
+      let startIdx = order.indexOf(loserId);
+      if (startIdx < 0) startIdx = 0;
+
+      await updateDoc(roomRef(), {
+        turnOrder: order,
+        turnIndex: startIdx,
+        round: (room.round || 1) + 1,
+        lastBid: null,
+        lastBidBy: null,
+        reveal: true,
+        lastActionAt: nowISO()
+      });
+
+      const bidderName = players[bidderId]?.name || "—";
+      const callerName = players[callerId]?.name || "—";
+      const loserName  = players[loserId]?.name || "—";
+
+      pushLog(`🧨 DUDO! ${callerName} duvidou do lance de ${bidderName}. Contagem: ${total} (inclui coringas 1).`);
+      pushLog(`${bidTrue ? "✅" : "❌"} O lance era ${bidTrue ? "VERDADEIRO" : "FALSO"}. ${loserName} perde 1 dado. ${eliminated ? "☠️ Eliminado!" : ""}`);
+
+      // opcional: limpar dados rolados (pra forçar nova rolagem)
+      for (const pid of Object.keys(newPlayers)) {
+        if (newPlayers[pid]?.alive) {
+          await updateDoc(playerRef(pid), { lastRoll: [] });
+        }
+      }
+    }
+
+    // ===== UI events =====
+    function setRoomFromInputsOrUrl() {
+      const url = new URL(location.href);
+      const fromUrl = url.searchParams.get("room");
+      if (fromUrl) {
+        roomId = fromUrl.toUpperCase();
+        $("roomInput").value = roomId;
+        $("roomPill").textContent = "Sala: " + roomId;
+      }
+    }
+
+    $("createBtn").addEventListener("click", async () => {
+      const name = $("nameInput").value.trim();
+      if (!name) return alert("Digite seu nome.");
+      const newRoom = rid(6);
+      await ensureRoomExists(newRoom);
+      await joinRoom();
+      pushLog("✅ Sala criada.");
+    });
+
+    $("joinBtn").addEventListener("click", async () => {
+      const name = $("nameInput").value.trim();
+      if (!name) return alert("Digite seu nome.");
+      const code = ($("roomInput").value.trim() || "").toUpperCase();
+      if (!code) return alert("Digite o código da sala (ou clique Criar).");
+      await ensureRoomExists(code);
+      await joi
