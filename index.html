@@ -3,15 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Perudo (online) — copo + animação</title>
+  <title>Perudo (online) — anti-roubo + lance destacado</title>
   <style>
     :root{
       --bg:#0b0f14; --card:#121824; --muted:#9fb0c7; --text:#e8f0ff;
       --acc:#5eead4; --danger:#ff6b6b; --ok:#7CFF7C;
-      --glass1: rgba(255,255,255,.10);
-      --glass2: rgba(255,255,255,.06);
-      --stroke: rgba(255,255,255,.12);
-      --shadow: rgba(0,0,0,.30);
     }
     body{
       margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -46,7 +42,6 @@
     button{ cursor:pointer; background: rgba(94,234,212,.12); border-color: rgba(94,234,212,.35); }
     button.primary{ background: rgba(94,234,212,.22); }
     button.danger{ background: rgba(255,107,107,.14); border-color: rgba(255,107,107,.35); }
-    button.ghost{ background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.10); }
     button:disabled{ opacity:.45; cursor:not-allowed; }
 
     .muted{ color: var(--muted); font-size: 13px; line-height:1.35; }
@@ -62,7 +57,7 @@
     .log{ max-height: 220px; overflow:auto; font-size: 14px; }
     .log div{ padding: 8px 0; border-bottom:1px solid rgba(255,255,255,.06); }
 
-    /* ====== Área do copo e dados ====== */
+    /* ====== Área copo + dados ====== */
     .cupArea{
       position: relative;
       height: 220px;
@@ -72,14 +67,13 @@
       overflow:hidden;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
     }
-
     .diceGrid{
       position:absolute;
       left: 14px; right: 14px; bottom: 14px;
       display:flex; flex-wrap:wrap; gap:8px;
       align-items:center;
-      transition: filter .25s ease, opacity .25s ease, transform .25s ease;
-      z-index: 1;
+      z-index: 2;
+      transition: transform .25s ease, opacity .25s ease;
     }
     .die{
       width:42px; height:42px; border-radius: 12px;
@@ -91,7 +85,7 @@
       user-select:none;
     }
 
-    /* Copo (overlay) */
+    /* Copo SVG */
     .cup{
       position:absolute;
       width: 210px;
@@ -99,34 +93,13 @@
       right: -24px;
       top: -20px;
       transform: rotate(12deg);
-      z-index: 5;
+      z-index: 3;
       pointer-events:none;
       filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
-      transition: transform .35s ease;
     }
     .cup svg{ width:100%; height:100%; display:block; }
 
-    /* Quando escondido: copo “cobre” e dados ficam blur */
-    .hiddenDice .diceGrid{
-      filter: blur(10px);
-      opacity: .25;
-      transform: translateY(8px) scale(.98);
-    }
-    .hiddenDice .cup{
-      transform: rotate(10deg) translateY(0px) translateX(0px);
-    }
-
-    /* Quando revelado: copo “sobe” um pouco pra mostrar os dados */
-    .revealedDice .cup{
-      transform: rotate(10deg) translateY(-54px) translateX(14px);
-    }
-    .revealedDice .diceGrid{
-      filter:none;
-      opacity:1;
-      transform:none;
-    }
-
-    /* ====== Animação de sacudir ====== */
+    /* Animação shake */
     @keyframes shakeCup {
       0%   { transform: rotate(12deg) translate(0,0); }
       10%  { transform: rotate(6deg)  translate(-6px, 2px); }
@@ -144,23 +117,48 @@
       animation: shakeCup 850ms ease-in-out 1;
     }
     .flash{
-      position:absolute;
-      inset:0;
+      position:absolute; inset:0;
       background: radial-gradient(circle at 30% 40%, rgba(94,234,212,.18), transparent 55%),
                   radial-gradient(circle at 70% 65%, rgba(255,255,255,.08), transparent 55%);
       opacity:0;
-      z-index: 2;
+      z-index: 1;
       transition: opacity .2s ease;
       pointer-events:none;
     }
     .shaking .flash{ opacity: 1; }
+
+    /* ====== Último lance destacado ====== */
+    .lastBidBox{
+      margin-top:10px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(94,234,212,.25);
+      background: linear-gradient(180deg, rgba(94,234,212,.10), rgba(255,255,255,.04));
+    }
+    .lastBidTitle{
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.70);
+      margin-bottom: 6px;
+    }
+    .lastBidMain{
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .lastBidSub{
+      margin-top: 6px;
+      font-size: 13px;
+      color: rgba(255,255,255,.70);
+    }
 
     a{ color: var(--acc); text-decoration:none; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>🎲 Perudo — sala online (copo + animação)</h1>
+    <h1>🎲 Perudo — sala online (anti-roubo + lance destacado)</h1>
 
     <div class="grid">
       <div class="card">
@@ -173,7 +171,7 @@
           <button id="copyLinkBtn" class="primary" disabled>Copiar link da sala</button>
         </div>
         <div class="muted" style="margin-top:10px">
-          Implementado: <b>lances</b> (qtd+face), <b>DUDO</b>, perde 1 dado, elimina em 0.
+          ✅ Anti-roubo: todo mundo vê quem <b>já rolou</b>. Lance só libera quando <b>todos vivos</b> rolarem.
           <br/>Simplificação: <b>1 é coringa sempre</b> (sem Palifico/Calza).
         </div>
       </div>
@@ -198,25 +196,23 @@
         </div>
 
         <div class="card">
-          <h2 style="margin:0 0 10px; font-size:16px">Jogadores</h2>
+          <h2 style="margin:0 0 10px; font-size:16px">Jogadores (✅ rolou / ⏳ falta)</h2>
           <div id="playersList" class="muted">—</div>
         </div>
       </div>
 
       <div class="two">
         <div class="card">
-          <h2 style="margin:0 0 10px; font-size:16px">Sua mão (secreta)</h2>
+          <h2 style="margin:0 0 10px; font-size:16px">Seus dados</h2>
           <div class="row">
             <button id="rollBtn" class="primary" disabled>Rolar meus dados</button>
-            <button id="toggleRevealBtn" class="ghost" disabled>Revelar meus dados</button>
             <span class="small" id="diceCountInfo">—</span>
           </div>
 
-          <div id="cupArea" class="cupArea hiddenDice">
+          <div id="cupArea" class="cupArea">
             <div class="flash"></div>
             <div class="diceGrid" id="myDice"></div>
 
-            <!-- Copo em SVG (simples e bonito) -->
             <div class="cup" aria-hidden="true">
               <svg viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -230,7 +226,6 @@
                   </linearGradient>
                 </defs>
 
-                <!-- Corpo do copo -->
                 <path d="M55 40
                          C70 20, 150 20, 165 40
                          L190 210
@@ -242,7 +237,6 @@
                       stroke="rgba(255,255,255,.16)"
                       stroke-width="2"/>
 
-                <!-- Brilho -->
                 <path d="M72 55
                          C92 35, 132 35, 150 55
                          L170 205
@@ -253,7 +247,6 @@
                       fill="url(#g2)"
                       opacity="0.55"/>
 
-                <!-- Borda -->
                 <path d="M55 40 C70 20,150 20,165 40"
                       stroke="rgba(255,255,255,.22)"
                       stroke-width="6"
@@ -263,7 +256,7 @@
           </div>
 
           <div class="muted" style="margin-top:10px">
-            Por padrão, seus dados ficam <b>cobertos</b>. Toque em <b>Revelar meus dados</b> pra ver.
+            Assim que você rola, seus dados aparecem aqui (só você vê os valores).
           </div>
         </div>
 
@@ -281,9 +274,15 @@
             <button id="bidBtn" class="primary" disabled>Dar lance</button>
             <button id="dudoBtn" class="danger" disabled>DUDO!</button>
           </div>
-          <div class="muted" style="margin-top:10px" id="lastBidInfo">Último lance: —</div>
-          <div class="muted" style="margin-top:6px">
-            Lance válido precisa ser <b>maior</b> que o anterior (mais quantidade, ou mesma quantidade com face maior).
+
+          <div class="lastBidBox">
+            <div class="lastBidTitle">Último lance</div>
+            <div class="lastBidMain" id="lastBidMain">—</div>
+            <div class="lastBidSub" id="lastBidSub">—</div>
+          </div>
+
+          <div class="muted" style="margin-top:10px">
+            Lance precisa ser <b>maior</b> que o anterior (mais quantidade, ou mesma quantidade com face maior).
           </div>
         </div>
       </div>
@@ -291,13 +290,6 @@
       <div class="card">
         <h2 style="margin:0 0 10px; font-size:16px">Log</h2>
         <div class="log" id="log"></div>
-      </div>
-
-      <div class="card">
-        <div class="muted">
-          ⚙️ Este HTML usa Firebase Firestore como “sala online”.  
-          Se quiser, eu adiciono: <b>Calza</b>, <b>Palifico</b> e a regra clássica do <b>1</b>.
-        </div>
       </div>
     </div>
   </div>
@@ -309,7 +301,6 @@
       collection, getDocs, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    // Firebase config (suas infos)
     const firebaseConfig = {
       apiKey: "AIzaSyAjZXA0w9IltKPE6V-eSKM8J1M0UbPyVzk",
       authDomain: "perudo-f7af1.firebaseapp.com",
@@ -322,7 +313,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ===== Helpers =====
     const $ = (id) => document.getElementById(id);
     const rand = (n) => Math.floor(Math.random() * n);
     const rid = (len=6) => Array.from({length:len}, () => "ABCDEFGHJKMNPQRSTUVXYZ23456789"[rand(30)]).join("");
@@ -334,13 +324,11 @@
       line.textContent = text;
       el.prepend(line);
     }
-
     function escapeHtml(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
-
     function renderDice(arr) {
       const box = $("myDice");
       box.innerHTML = "";
-      arr.forEach(v => {
+      (arr || []).forEach(v => {
         const d = document.createElement("div");
         d.className = "die";
         d.textContent = v;
@@ -354,12 +342,10 @@
       if (next.qty === prev.qty && next.face > prev.face) return true;
       return false;
     }
-
     function countTotalDice(players) {
       return Object.values(players).reduce((acc,p) => acc + (p.diceCount||0), 0);
     }
-
-    // 1 é coringa sempre (simplificação)
+    // 1 é coringa sempre (simplificado)
     function countBid(players, bid) {
       const face = bid.face;
       let total = 0;
@@ -373,24 +359,27 @@
       return total;
     }
 
+    // ===== ID por sala (evita sobrescrever jogador) =====
+    function makeClientId() {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+    }
+    let meId = null;
+    function getOrCreateMeIdForRoom(roomId) {
+      const key = "perudo_meId_" + roomId;
+      let id = sessionStorage.getItem(key);
+      if (!id) {
+        id = (crypto.randomUUID ? crypto.randomUUID() : makeClientId());
+        sessionStorage.setItem(key, id);
+      }
+      return id;
+    }
+
     // ===== State =====
     let roomId = null;
-    let meId = localStorage.getItem("perudo_meId") || crypto.randomUUID();
-    localStorage.setItem("perudo_meId", meId);
-
     let unsub = null;
-
-    // UI state (local)
-    let myReveal = false;
     let rollingLock = false;
-
-    function setRevealState(on) {
-      myReveal = on;
-      const cupArea = $("cupArea");
-      cupArea.classList.toggle("hiddenDice", !on);
-      cupArea.classList.toggle("revealedDice", on);
-      $("toggleRevealBtn").textContent = on ? "Esconder meus dados" : "Revelar meus dados";
-    }
 
     function roomRef() { return doc(db, "perudo_rooms", roomId); }
     function playerRef(pid) { return doc(db, "perudo_rooms", roomId, "players", pid); }
@@ -400,18 +389,20 @@
       roomId = newRoomId;
       $("roomPill").textContent = "Sala: " + roomId;
 
+      // ✅ ID único por sala
+      meId = getOrCreateMeIdForRoom(roomId);
+
       const snap = await getDoc(roomRef());
       if (!snap.exists()) {
         await setDoc(roomRef(), {
           createdAt: serverTimestamp(),
           hostId: meId,
-          status: "lobby", // lobby | playing
+          status: "lobby",
           turnOrder: [],
           turnIndex: 0,
           round: 0,
           lastBid: null,
           lastBidBy: null,
-          reveal: false,
           lastActionAt: nowISO()
         });
       }
@@ -427,6 +418,7 @@
         name,
         diceCount: 5,
         lastRoll: [],
+        rolledRound: false,   // ✅ anti-roubo
         alive: true,
         joinedAt: serverTimestamp()
       }, { merge: true });
@@ -440,9 +432,6 @@
       $("copyLinkBtn").disabled = false;
       $("startBtn").disabled = false;
       $("resetBtn").disabled = false;
-
-      $("toggleRevealBtn").disabled = false;
-      setRevealState(false); // começa escondido
 
       subscribe();
     }
@@ -460,9 +449,17 @@
         renderPlayers(room, players);
         updateUI(room, players);
 
-        // Render meus dados SEMPRE (visual local), mas pode estar escondido pela UI
+        // render meus dados
         renderDice(players[meId]?.lastRoll || []);
       });
+    }
+
+    function getAlivePlayers(players) {
+      return Object.values(players).filter(p => (p.alive ?? true) && (p.diceCount ?? 0) > 0);
+    }
+    function allAliveRolled(players) {
+      const alive = getAlivePlayers(players);
+      return alive.length > 0 && alive.every(p => p.rolledRound === true);
     }
 
     function renderPlayers(room, players) {
@@ -476,9 +473,21 @@
       list.innerHTML = entries.map(p => {
         const host = p.id === hostId ? " 👑" : "";
         const turn = p.id === turnId ? " ▶️" : "";
-        const alive = p.alive ? "" : " (eliminado)";
-        return `<div>• <b>${escapeHtml(p.name||"")}</b>${host}${turn} — dados: ${p.diceCount ?? 0}${alive}</div>`;
+        const alive = (p.alive ?? true) ? "" : " (eliminado)";
+        const rolled = (p.alive ?? true) ? (p.rolledRound ? " ✅" : " ⏳") : "";
+        return `<div>• <b>${escapeHtml(p.name||"")}</b>${host}${turn}${rolled} — dados: ${p.diceCount ?? 0}${alive}</div>`;
       }).join("");
+    }
+
+    function updateLastBid(room, players) {
+      if (!room.lastBid) {
+        $("lastBidMain").textContent = "—";
+        $("lastBidSub").textContent = "—";
+        return;
+      }
+      const by = players[room.lastBidBy]?.name || "—";
+      $("lastBidMain").textContent = `${room.lastBid.qty} de ${room.lastBid.face}`;
+      $("lastBidSub").textContent = `Feito por: ${by}`;
     }
 
     function updateUI(room, players) {
@@ -506,22 +515,19 @@
         qtySel.appendChild(opt);
       }
 
-      $("rollBtn").disabled = !playing || !me?.alive || rollingLock;
+      // anti-roubo: só libera lance quando todos vivos rolaram
+      const everyoneRolled = allAliveRolled(players);
 
-      $("qtySel").disabled = !myTurn;
-      $("faceSel").disabled = !myTurn;
-      $("bidBtn").disabled = !myTurn;
-      $("dudoBtn").disabled = !myTurn || !room.lastBid;
+      $("rollBtn").disabled = !playing || !(me?.alive ?? true) || rollingLock;
 
-      if (room.lastBid) {
-        const by = players[room.lastBidBy]?.name || "—";
-        $("lastBidInfo").innerHTML = `Último lance: <b>${room.lastBid.qty}</b> de <b>${room.lastBid.face}</b> (por <b>${escapeHtml(by)}</b>)`;
-      } else {
-        $("lastBidInfo").textContent = "Último lance: —";
-      }
+      $("qtySel").disabled  = !myTurn || !everyoneRolled;
+      $("faceSel").disabled = !myTurn || !everyoneRolled;
+      $("bidBtn").disabled  = !myTurn || !everyoneRolled;
+      $("dudoBtn").disabled = !myTurn || !room.lastBid || !everyoneRolled;
+
+      updateLastBid(room, players);
     }
 
-    // ===== Copo: animação =====
     async function animateCupShake() {
       const cupArea = $("cupArea");
       cupArea.classList.add("shaking");
@@ -534,13 +540,18 @@
       const pSnap = await getDocs(playersCol());
       const players = [];
       pSnap.forEach(d => players.push(d.data()));
-      const alive = players.filter(p => p.alive !== false && (p.diceCount ?? 0) > 0);
+      const alive = players.filter(p => (p.alive ?? true) && (p.diceCount ?? 0) > 0);
       if (alive.length < 2) return alert("Precisa de pelo menos 2 jogadores.");
 
       const order = alive.map(p => p.id);
       for (let i=order.length-1;i>0;i--){
         const j = rand(i+1);
         [order[i], order[j]] = [order[j], order[i]];
+      }
+
+      // zera rodada: ninguém rolou ainda
+      for (const p of alive) {
+        await updateDoc(playerRef(p.id), { rolledRound: false, lastRoll: [] });
       }
 
       await updateDoc(roomRef(), {
@@ -550,13 +561,10 @@
         round: 1,
         lastBid: null,
         lastBidBy: null,
-        reveal: false,
         lastActionAt: nowISO()
       });
 
-      // começa escondido no meu cliente
-      setRevealState(false);
-      pushLog("🎬 Jogo iniciado! Ordem sorteada.");
+      pushLog("🎬 Jogo iniciado! Todo mundo precisa rolar os dados.");
     }
 
     async function resetRoom() {
@@ -564,7 +572,7 @@
 
       const pSnap = await getDocs(playersCol());
       for (const d of pSnap.docs) {
-        await updateDoc(d.ref, { diceCount: 5, lastRoll: [], alive: true });
+        await updateDoc(d.ref, { diceCount: 5, lastRoll: [], rolledRound: false, alive: true });
       }
       await updateDoc(roomRef(), {
         status: "lobby",
@@ -573,10 +581,8 @@
         round: 0,
         lastBid: null,
         lastBidBy: null,
-        reveal: false,
         lastActionAt: nowISO()
       });
-      setRevealState(false);
       pushLog("♻️ Sala resetada.");
     }
 
@@ -585,21 +591,22 @@
       rollingLock = true;
       $("rollBtn").disabled = true;
 
-      // sempre esconde antes de rolar (fica mais “jogo”)
-      setRevealState(false);
-
-      // anima copo
       await animateCupShake();
 
       const snap = await getDoc(playerRef(meId));
       if (!snap.exists()) { rollingLock=false; return; }
       const me = snap.data();
-      if (!me.alive || (me.diceCount ?? 0) <= 0) { rollingLock=false; return; }
+      if (!(me.alive ?? true) || (me.diceCount ?? 0) <= 0) { rollingLock=false; return; }
 
       const dice = Array.from({length: me.diceCount}, () => rand(6)+1);
-      await updateDoc(playerRef(meId), { lastRoll: dice });
 
-      pushLog("🎲 Você rolou seus dados. (toque em Revelar para ver)");
+      // ✅ salva e marca que rolou na rodada
+      await updateDoc(playerRef(meId), { lastRoll: dice, rolledRound: true });
+
+      // ✅ mostra imediatamente (sem esperar snapshot)
+      renderDice(dice);
+
+      pushLog("🎲 Você rolou seus dados.");
       rollingLock = false;
       $("rollBtn").disabled = false;
     }
@@ -611,17 +618,20 @@
       const turnId = room.turnOrder?.[room.turnIndex];
       if (turnId !== meId) return alert("Não é sua vez.");
 
+      // trava se alguém não rolou
+      const pSnap = await getDocs(playersCol());
+      const players = {};
+      pSnap.forEach(d => players[d.id] = d.data());
+      if (!allAliveRolled(players)) return alert("Ainda falta alguém rolar os dados nesta rodada.");
+
       const next = { qty: parseInt($("qtySel").value,10), face: parseInt($("faceSel").value,10) };
       const prev = room.lastBid;
 
-      if (!higherThan(prev, next)) {
-        return alert("Lance inválido. Ele precisa ser maior que o último lance.");
-      }
+      if (!higherThan(prev, next)) return alert("Lance inválido. Precisa ser maior que o último lance.");
 
       await updateDoc(roomRef(), {
         lastBid: next,
         lastBidBy: meId,
-        reveal: false,
         turnIndex: (room.turnIndex + 1) % room.turnOrder.length,
         lastActionAt: nowISO()
       });
@@ -638,10 +648,10 @@
       const turnId = room.turnOrder?.[room.turnIndex];
       if (turnId !== meId) return alert("Não é sua vez.");
 
-      // carrega players
       const pSnap = await getDocs(playersCol());
       const players = {};
       pSnap.forEach(d => players[d.id] = d.data());
+      if (!allAliveRolled(players)) return alert("Ainda falta alguém rolar os dados nesta rodada.");
 
       const total = countBid(players, bid);
       const bidderId = room.lastBidBy;
@@ -654,20 +664,16 @@
       let newCount = Math.max(0, (loser.diceCount ?? 0) - 1);
       const eliminated = newCount === 0;
 
-      await updateDoc(playerRef(loserId), {
-        diceCount: newCount,
-        alive: !eliminated
-      });
+      await updateDoc(playerRef(loserId), { diceCount: newCount, alive: !eliminated });
 
-      // remove eliminados da ordem
+      // atualiza ordem removendo eliminados
       const newPlayersSnap = await getDocs(playersCol());
       const newPlayers = {};
       newPlayersSnap.forEach(d => newPlayers[d.id] = d.data());
 
       let order = room.turnOrder.slice();
-      order = order.filter(pid => (newPlayers[pid]?.alive ?? false) && (newPlayers[pid]?.diceCount ?? 0) > 0);
+      order = order.filter(pid => (newPlayers[pid]?.alive ?? true) && (newPlayers[pid]?.diceCount ?? 0) > 0);
 
-      // se sobrou 1, fim
       if (order.length === 1) {
         const winnerName = newPlayers[order[0]]?.name || "Alguém";
         await updateDoc(roomRef(), {
@@ -676,14 +682,13 @@
           turnIndex: 0,
           lastBid: null,
           lastBidBy: null,
-          reveal: true,
           lastActionAt: nowISO()
         });
         pushLog(`🏆 ${winnerName} venceu! (Sala voltou ao lobby)`);
         return;
       }
 
-      // loser começa a próxima rodada (se vivo; senão, o próximo)
+      // loser começa a próxima rodada (se vivo; senão o próximo)
       let startIdx = order.indexOf(loserId);
       if (startIdx < 0) startIdx = 0;
 
@@ -693,7 +698,6 @@
         round: (room.round || 1) + 1,
         lastBid: null,
         lastBidBy: null,
-        reveal: true,
         lastActionAt: nowISO()
       });
 
@@ -703,17 +707,15 @@
 
       pushLog(`🧨 DUDO! ${callerName} duvidou do lance de ${bidderName}. Contagem: ${total} (inclui coringas 1).`);
       pushLog(`${bidTrue ? "✅" : "❌"} Lance ${bidTrue ? "VERDADEIRO" : "FALSO"}. ${loserName} perde 1 dado. ${eliminated ? "☠️ Eliminado!" : ""}`);
-      pushLog(`👀 (Momento de revelação) Agora é nova rodada — role de novo!`);
+      pushLog("🔄 Nova rodada! Todo mundo precisa rolar de novo.");
 
-      // limpa dados rolados (força nova rolagem)
+      // ✅ nova rodada: zera dados e rolledRound de todos vivos
       for (const pid of Object.keys(newPlayers)) {
-        if (newPlayers[pid]?.alive) {
-          await updateDoc(playerRef(pid), { lastRoll: [] });
+        if ((newPlayers[pid]?.alive ?? true) && (newPlayers[pid]?.diceCount ?? 0) > 0) {
+          await updateDoc(playerRef(pid), { lastRoll: [], rolledRound: false });
         }
       }
-
-      // no meu cliente, volta a esconder
-      setRevealState(false);
+      renderDice([]); // limpa minha UI local
     }
 
     // ===== UI events =====
@@ -752,10 +754,6 @@
     $("bidBtn").addEventListener("click", bid);
     $("dudoBtn").addEventListener("click", dudo);
 
-    $("toggleRevealBtn").addEventListener("click", () => {
-      setRevealState(!myReveal);
-    });
-
     $("copyLinkBtn").addEventListener("click", async () => {
       const url = new URL(location.href);
       url.searchParams.set("room", roomId);
@@ -770,12 +768,7 @@
       $("copyLinkBtn").disabled = false;
       $("startBtn").disabled = false;
       $("resetBtn").disabled = false;
-      $("toggleRevealBtn").disabled = false;
-      setRevealState(false);
       subscribe();
-    } else {
-      // sem sala: deixa padrão escondido
-      setRevealState(false);
     }
   </script>
 </body>
