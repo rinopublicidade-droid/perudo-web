@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Perudo (online) — anti-roubo + lance destacado</title>
+  <title>Perudo (online) — Revelação no fim da rodada</title>
   <style>
     :root{
       --bg:#0b0f14; --card:#121824; --muted:#9fb0c7; --text:#e8f0ff;
@@ -113,9 +113,7 @@
       90%  { transform: rotate(10deg) translate(-3px, 1px); }
       100% { transform: rotate(12deg) translate(0,0); }
     }
-    .shaking .cup{
-      animation: shakeCup 850ms ease-in-out 1;
-    }
+    .shaking .cup{ animation: shakeCup 850ms ease-in-out 1; }
     .flash{
       position:absolute; inset:0;
       background: radial-gradient(circle at 30% 40%, rgba(94,234,212,.18), transparent 55%),
@@ -142,23 +140,51 @@
       color: rgba(255,255,255,.70);
       margin-bottom: 6px;
     }
-    .lastBidMain{
-      font-size: 18px;
-      font-weight: 900;
-      line-height: 1.2;
-    }
-    .lastBidSub{
-      margin-top: 6px;
-      font-size: 13px;
-      color: rgba(255,255,255,.70);
-    }
+    .lastBidMain{ font-size: 18px; font-weight: 900; line-height: 1.2; }
+    .lastBidSub{ margin-top: 6px; font-size: 13px; color: rgba(255,255,255,.70); }
 
-    a{ color: var(--acc); text-decoration:none; }
+    /* ===== Reveal Modal ===== */
+    #revealModal{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.72);
+      z-index:9999;
+      padding: 16px;
+    }
+    #revealModal .box{
+      max-width: 780px;
+      margin: 6vh auto;
+      background: rgba(18,24,36,.95);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    #revealModal .head{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+    }
+    #revealModal .title{ font-weight:900; font-size:18px; }
+    #revealCountdown{ margin-top:6px; font-size:13px; color:rgba(255,255,255,.7); }
+    #revealContent{ margin-top:12px; display:grid; gap:10px; }
+    .revealCard{
+      padding:10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+    }
+    .revealName{ font-weight:800; margin-bottom:8px; }
+    .revealDie{
+      display:inline-flex; width:34px; height:34px; border-radius:10px;
+      align-items:center; justify-content:center; font-weight:800;
+      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+      margin-right:6px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>🎲 Perudo — sala online (anti-roubo + lance destacado)</h1>
+    <h1>🎲 Perudo — Revelação no fim da rodada (DUDO)</h1>
 
     <div class="grid">
       <div class="card">
@@ -172,6 +198,7 @@
         </div>
         <div class="muted" style="margin-top:10px">
           ✅ Anti-roubo: todo mundo vê quem <b>já rolou</b>. Lance só libera quando <b>todos vivos</b> rolarem.
+          <br/>👀 Transparência: no <b>DUDO</b>, aparece a <b>revelação dos dados de todos</b> por alguns segundos.
           <br/>Simplificação: <b>1 é coringa sempre</b> (sem Palifico/Calza).
         </div>
       </div>
@@ -294,6 +321,18 @@
     </div>
   </div>
 
+  <!-- Reveal Modal -->
+  <div id="revealModal">
+    <div class="box">
+      <div class="head">
+        <div class="title">👀 Revelação da rodada</div>
+        <button id="closeRevealBtn">Fechar</button>
+      </div>
+      <div id="revealCountdown"></div>
+      <div id="revealContent"></div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
@@ -376,6 +415,48 @@
       return id;
     }
 
+    // ===== Reveal modal helpers =====
+    let revealTimer = null;
+    function diceRow(arr) {
+      return (arr || []).map(v => `<span class="revealDie">${v}</span>`).join("");
+    }
+
+    async function hideRevealModal() {
+      $("revealModal").style.display = "none";
+      if (revealTimer) { clearInterval(revealTimer); revealTimer = null; }
+      // tenta limpar
+      try { await updateDoc(roomRef(), { reveal: null }); } catch(e) {}
+    }
+
+    function showRevealModal(room, players) {
+      const diceBy = room.reveal?.diceByPlayer || {};
+      const content = Object.entries(diceBy).map(([pid, dice]) => {
+        const name = players[pid]?.name || pid.slice(0,6);
+        return `
+          <div class="revealCard">
+            <div class="revealName">${escapeHtml(name)}</div>
+            <div>${diceRow(dice)}</div>
+          </div>
+        `;
+      }).join("") || `<div class="muted">Sem dados para revelar.</div>`;
+
+      $("revealContent").innerHTML = content;
+      $("revealModal").style.display = "block";
+
+      if (revealTimer) clearInterval(revealTimer);
+      revealTimer = setInterval(async () => {
+        const leftMs = (room.reveal?.expiresAt ?? Date.now()) - Date.now();
+        const s = Math.max(0, Math.ceil(leftMs / 1000));
+        $("revealCountdown").textContent = `Fechando em ${s}s…`;
+
+        if (s <= 0) {
+          clearInterval(revealTimer);
+          revealTimer = null;
+          await hideRevealModal();
+        }
+      }, 250);
+    }
+
     // ===== State =====
     let roomId = null;
     let unsub = null;
@@ -389,7 +470,6 @@
       roomId = newRoomId;
       $("roomPill").textContent = "Sala: " + roomId;
 
-      // ✅ ID único por sala
       meId = getOrCreateMeIdForRoom(roomId);
 
       const snap = await getDoc(roomRef());
@@ -403,6 +483,7 @@
           round: 0,
           lastBid: null,
           lastBidBy: null,
+          reveal: null,
           lastActionAt: nowISO()
         });
       }
@@ -418,7 +499,7 @@
         name,
         diceCount: 5,
         lastRoll: [],
-        rolledRound: false,   // ✅ anti-roubo
+        rolledRound: false,
         alive: true,
         joinedAt: serverTimestamp()
       }, { merge: true });
@@ -448,9 +529,11 @@
 
         renderPlayers(room, players);
         updateUI(room, players);
-
-        // render meus dados
         renderDice(players[meId]?.lastRoll || []);
+
+        if (room.reveal?.active) {
+          showRevealModal(room, players);
+        }
       });
     }
 
@@ -504,7 +587,6 @@
       const myDiceCount = me?.diceCount ?? 0;
       $("diceCountInfo").textContent = playing ? `Você tem ${myDiceCount} dado(s).` : "—";
 
-      // qty options
       const maxPossible = Math.max(1, countTotalDice(players));
       const qtySel = $("qtySel");
       qtySel.innerHTML = "";
@@ -515,7 +597,6 @@
         qtySel.appendChild(opt);
       }
 
-      // anti-roubo: só libera lance quando todos vivos rolaram
       const everyoneRolled = allAliveRolled(players);
 
       $("rollBtn").disabled = !playing || !(me?.alive ?? true) || rollingLock;
@@ -549,7 +630,6 @@
         [order[i], order[j]] = [order[j], order[i]];
       }
 
-      // zera rodada: ninguém rolou ainda
       for (const p of alive) {
         await updateDoc(playerRef(p.id), { rolledRound: false, lastRoll: [] });
       }
@@ -561,6 +641,7 @@
         round: 1,
         lastBid: null,
         lastBidBy: null,
+        reveal: null,
         lastActionAt: nowISO()
       });
 
@@ -581,6 +662,7 @@
         round: 0,
         lastBid: null,
         lastBidBy: null,
+        reveal: null,
         lastActionAt: nowISO()
       });
       pushLog("♻️ Sala resetada.");
@@ -600,10 +682,7 @@
 
       const dice = Array.from({length: me.diceCount}, () => rand(6)+1);
 
-      // ✅ salva e marca que rolou na rodada
       await updateDoc(playerRef(meId), { lastRoll: dice, rolledRound: true });
-
-      // ✅ mostra imediatamente (sem esperar snapshot)
       renderDice(dice);
 
       pushLog("🎲 Você rolou seus dados.");
@@ -618,7 +697,6 @@
       const turnId = room.turnOrder?.[room.turnIndex];
       if (turnId !== meId) return alert("Não é sua vez.");
 
-      // trava se alguém não rolou
       const pSnap = await getDocs(playersCol());
       const players = {};
       pSnap.forEach(d => players[d.id] = d.data());
@@ -652,6 +730,22 @@
       const players = {};
       pSnap.forEach(d => players[d.id] = d.data());
       if (!allAliveRolled(players)) return alert("Ainda falta alguém rolar os dados nesta rodada.");
+
+      // ===== REVELAÇÃO (antes de limpar os dados) =====
+      const diceByPlayer = {};
+      for (const [pid, p] of Object.entries(players)) {
+        if ((p.alive ?? true) && (p.diceCount ?? 0) > 0) {
+          diceByPlayer[pid] = p.lastRoll || [];
+        }
+      }
+      await updateDoc(roomRef(), {
+        reveal: {
+          active: true,
+          at: nowISO(),
+          expiresAt: Date.now() + 9000, // 9s
+          diceByPlayer
+        }
+      });
 
       const total = countBid(players, bid);
       const bidderId = room.lastBidBy;
@@ -709,13 +803,13 @@
       pushLog(`${bidTrue ? "✅" : "❌"} Lance ${bidTrue ? "VERDADEIRO" : "FALSO"}. ${loserName} perde 1 dado. ${eliminated ? "☠️ Eliminado!" : ""}`);
       pushLog("🔄 Nova rodada! Todo mundo precisa rolar de novo.");
 
-      // ✅ nova rodada: zera dados e rolledRound de todos vivos
+      // nova rodada: zera dados e rolledRound de todos vivos
       for (const pid of Object.keys(newPlayers)) {
         if ((newPlayers[pid]?.alive ?? true) && (newPlayers[pid]?.diceCount ?? 0) > 0) {
           await updateDoc(playerRef(pid), { lastRoll: [], rolledRound: false });
         }
       }
-      renderDice([]); // limpa minha UI local
+      renderDice([]);
     }
 
     // ===== UI events =====
@@ -760,6 +854,8 @@
       await navigator.clipboard.writeText(url.toString());
       alert("Link copiado! Envie no WhatsApp.");
     });
+
+    $("closeRevealBtn").addEventListener("click", hideRevealModal);
 
     // init
     setRoomFromInputsOrUrl();
