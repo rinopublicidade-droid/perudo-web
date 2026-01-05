@@ -3,44 +3,164 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Perudo (online simples)</title>
+  <title>Perudo (online) — copo + animação</title>
   <style>
-    :root { --bg:#0b0f14; --card:#121824; --muted:#9fb0c7; --text:#e8f0ff; --acc:#5eead4; --danger:#ff6b6b; --ok:#7CFF7C; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:linear-gradient(180deg,#07101a,#0b0f14); color:var(--text); }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
-    h1 { font-size: 20px; margin: 0 0 12px; }
-    .grid { display:grid; grid-template-columns: 1fr; gap:12px; }
-    .card { background: rgba(18,24,36,.9); border:1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    input, button, select {
-      border-radius: 12px; border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06); color: var(--text);
-      padding: 10px 12px; font-size: 16px;
+    :root{
+      --bg:#0b0f14; --card:#121824; --muted:#9fb0c7; --text:#e8f0ff;
+      --acc:#5eead4; --danger:#ff6b6b; --ok:#7CFF7C;
+      --glass1: rgba(255,255,255,.10);
+      --glass2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.12);
+      --shadow: rgba(0,0,0,.30);
     }
-    input::placeholder { color: rgba(255,255,255,.45); }
-    button { cursor:pointer; background: rgba(94,234,212,.12); border-color: rgba(94,234,212,.35); }
-    button.primary { background: rgba(94,234,212,.22); }
-    button.danger { background: rgba(255,107,107,.14); border-color: rgba(255,107,107,.35); }
-    button:disabled { opacity:.45; cursor:not-allowed; }
-    .muted { color: var(--muted); font-size: 13px; line-height:1.35; }
-    .pill { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); font-size: 13px; }
-    .log { max-height: 220px; overflow:auto; font-size: 14px; }
-    .log div { padding: 8px 0; border-bottom:1px solid rgba(255,255,255,.06); }
-    .dice { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
-    .die { width:36px; height:36px; border-radius: 10px; display:flex; align-items:center; justify-content:center; font-weight:700;
-      background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: linear-gradient(180deg,#07101a,#0b0f14);
+      color:var(--text);
     }
-    .two { display:grid; grid-template-columns: 1fr; gap:12px; }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 16px; }
+    h1{ font-size: 20px; margin: 0 0 12px; }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    .two{ display:grid; grid-template-columns: 1fr; gap:12px; }
     @media(min-width: 900px){ .two{ grid-template-columns: 1.05fr .95fr; } }
-    .small { font-size: 12px; color: rgba(255,255,255,.65); }
-    .ok { color: var(--ok); }
-    .dangerText { color: var(--danger); }
-    a { color: var(--acc); text-decoration:none; }
+
+    .card{
+      background: rgba(18,24,36,.90);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-start; }
+
+    input, button, select{
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 16px;
+    }
+    input::placeholder{ color: rgba(255,255,255,.45); }
+    button{ cursor:pointer; background: rgba(94,234,212,.12); border-color: rgba(94,234,212,.35); }
+    button.primary{ background: rgba(94,234,212,.22); }
+    button.danger{ background: rgba(255,107,107,.14); border-color: rgba(255,107,107,.35); }
+    button.ghost{ background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.10); }
+    button:disabled{ opacity:.45; cursor:not-allowed; }
+
+    .muted{ color: var(--muted); font-size: 13px; line-height:1.35; }
+    .small{ font-size: 12px; color: rgba(255,255,255,.65); }
+
+    .pill{
+      padding: 6px 10px; border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      font-size: 13px;
+    }
+
+    .log{ max-height: 220px; overflow:auto; font-size: 14px; }
+    .log div{ padding: 8px 0; border-bottom:1px solid rgba(255,255,255,.06); }
+
+    /* ====== Área do copo e dados ====== */
+    .cupArea{
+      position: relative;
+      height: 220px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.06);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    .diceGrid{
+      position:absolute;
+      left: 14px; right: 14px; bottom: 14px;
+      display:flex; flex-wrap:wrap; gap:8px;
+      align-items:center;
+      transition: filter .25s ease, opacity .25s ease, transform .25s ease;
+      z-index: 1;
+    }
+    .die{
+      width:42px; height:42px; border-radius: 12px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size: 18px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 20px rgba(0,0,0,.20);
+      user-select:none;
+    }
+
+    /* Copo (overlay) */
+    .cup{
+      position:absolute;
+      width: 210px;
+      height: 240px;
+      right: -24px;
+      top: -20px;
+      transform: rotate(12deg);
+      z-index: 5;
+      pointer-events:none;
+      filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
+      transition: transform .35s ease;
+    }
+    .cup svg{ width:100%; height:100%; display:block; }
+
+    /* Quando escondido: copo “cobre” e dados ficam blur */
+    .hiddenDice .diceGrid{
+      filter: blur(10px);
+      opacity: .25;
+      transform: translateY(8px) scale(.98);
+    }
+    .hiddenDice .cup{
+      transform: rotate(10deg) translateY(0px) translateX(0px);
+    }
+
+    /* Quando revelado: copo “sobe” um pouco pra mostrar os dados */
+    .revealedDice .cup{
+      transform: rotate(10deg) translateY(-54px) translateX(14px);
+    }
+    .revealedDice .diceGrid{
+      filter:none;
+      opacity:1;
+      transform:none;
+    }
+
+    /* ====== Animação de sacudir ====== */
+    @keyframes shakeCup {
+      0%   { transform: rotate(12deg) translate(0,0); }
+      10%  { transform: rotate(6deg)  translate(-6px, 2px); }
+      20%  { transform: rotate(18deg) translate(8px, -2px); }
+      30%  { transform: rotate(9deg)  translate(-10px, 2px); }
+      40%  { transform: rotate(16deg) translate(10px, 0px); }
+      50%  { transform: rotate(8deg)  translate(-8px, -2px); }
+      60%  { transform: rotate(20deg) translate(10px, 3px); }
+      70%  { transform: rotate(10deg) translate(-6px, 0px); }
+      80%  { transform: rotate(16deg) translate(6px, -2px); }
+      90%  { transform: rotate(10deg) translate(-3px, 1px); }
+      100% { transform: rotate(12deg) translate(0,0); }
+    }
+    .shaking .cup{
+      animation: shakeCup 850ms ease-in-out 1;
+    }
+    .flash{
+      position:absolute;
+      inset:0;
+      background: radial-gradient(circle at 30% 40%, rgba(94,234,212,.18), transparent 55%),
+                  radial-gradient(circle at 70% 65%, rgba(255,255,255,.08), transparent 55%);
+      opacity:0;
+      z-index: 2;
+      transition: opacity .2s ease;
+      pointer-events:none;
+    }
+    .shaking .flash{ opacity: 1; }
+
+    a{ color: var(--acc); text-decoration:none; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>🎲 Perudo — sala online simples</h1>
+    <h1>🎲 Perudo — sala online (copo + animação)</h1>
 
     <div class="grid">
       <div class="card">
@@ -53,8 +173,8 @@
           <button id="copyLinkBtn" class="primary" disabled>Copiar link da sala</button>
         </div>
         <div class="muted" style="margin-top:10px">
-          Regras implementadas: <b>lances</b> (quantidade + face), <b>DUDO</b> (duvidar), perde 1 dado, elimina em 0.
-          <br/>Simplificação: <b>1 é coringa</b> sempre (não tem Palifico/Calza aqui).
+          Implementado: <b>lances</b> (qtd+face), <b>DUDO</b>, perde 1 dado, elimina em 0.
+          <br/>Simplificação: <b>1 é coringa sempre</b> (sem Palifico/Calza).
         </div>
       </div>
 
@@ -68,7 +188,7 @@
             <button id="joinBtn">Entrar</button>
           </div>
           <div class="muted" style="margin-top:10px">
-            Dica: ao criar, você vira <b>host</b>. Depois clique em <b>Iniciar jogo</b>.
+            Ao criar, você vira <b>host</b>. Depois clique em <b>Iniciar jogo</b>.
           </div>
 
           <div style="margin-top:14px" class="row">
@@ -88,11 +208,62 @@
           <h2 style="margin:0 0 10px; font-size:16px">Sua mão (secreta)</h2>
           <div class="row">
             <button id="rollBtn" class="primary" disabled>Rolar meus dados</button>
+            <button id="toggleRevealBtn" class="ghost" disabled>Revelar meus dados</button>
             <span class="small" id="diceCountInfo">—</span>
           </div>
-          <div class="dice" id="myDice"></div>
-          <div class="muted" style="margin-top:8px">
-            Seus dados ficam <b>visíveis só pra você</b>. O resto do mundo só vê quando alguém dá DUDO.
+
+          <div id="cupArea" class="cupArea hiddenDice">
+            <div class="flash"></div>
+            <div class="diceGrid" id="myDice"></div>
+
+            <!-- Copo em SVG (simples e bonito) -->
+            <div class="cup" aria-hidden="true">
+              <svg viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="rgba(255,255,255,.22)"/>
+                    <stop offset="1" stop-color="rgba(255,255,255,.06)"/>
+                  </linearGradient>
+                  <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="rgba(94,234,212,.18)"/>
+                    <stop offset="1" stop-color="rgba(255,255,255,.05)"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Corpo do copo -->
+                <path d="M55 40
+                         C70 20, 150 20, 165 40
+                         L190 210
+                         C192 228, 178 242, 160 242
+                         L60 242
+                         C42 242, 28 228, 30 210
+                         Z"
+                      fill="url(#g1)"
+                      stroke="rgba(255,255,255,.16)"
+                      stroke-width="2"/>
+
+                <!-- Brilho -->
+                <path d="M72 55
+                         C92 35, 132 35, 150 55
+                         L170 205
+                         C172 218, 162 228, 150 228
+                         L85 228
+                         C72 228, 62 218, 64 205
+                         Z"
+                      fill="url(#g2)"
+                      opacity="0.55"/>
+
+                <!-- Borda -->
+                <path d="M55 40 C70 20,150 20,165 40"
+                      stroke="rgba(255,255,255,.22)"
+                      stroke-width="6"
+                      stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="muted" style="margin-top:10px">
+            Por padrão, seus dados ficam <b>cobertos</b>. Toque em <b>Revelar meus dados</b> pra ver.
           </div>
         </div>
 
@@ -112,7 +283,7 @@
           </div>
           <div class="muted" style="margin-top:10px" id="lastBidInfo">Último lance: —</div>
           <div class="muted" style="margin-top:6px">
-            Lance válido precisa ser <b>maior</b> que o anterior (ou mais quantidade, ou mesma quantidade com face maior).
+            Lance válido precisa ser <b>maior</b> que o anterior (mais quantidade, ou mesma quantidade com face maior).
           </div>
         </div>
       </div>
@@ -124,38 +295,29 @@
 
       <div class="card">
         <div class="muted">
-          ⚙️ Para funcionar “de verdade” online, este HTML usa Firebase Firestore.  
-          Se você quiser, eu adapto pra funcionar com um <b>servidorzinho Node</b> também.
+          ⚙️ Este HTML usa Firebase Firestore como “sala online”.  
+          Se quiser, eu adiciono: <b>Calza</b>, <b>Palifico</b> e a regra clássica do <b>1</b>.
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Firebase (CDN) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
       getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
-      collection, getDocs, deleteDoc, serverTimestamp
+      collection, getDocs, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    // =========================
-    // 1) COLE AQUI SEU firebaseConfig
-    // =========================
+    // Firebase config (suas infos)
     const firebaseConfig = {
-      // apiKey: "...",
-      // authDomain: "...",
-      // projectId: "...",
-      // storageBucket: "...",
-      // messagingSenderId: "...",
-      // appId: "..."
+      apiKey: "AIzaSyAjZXA0w9IltKPE6V-eSKM8J1M0UbPyVzk",
+      authDomain: "perudo-f7af1.firebaseapp.com",
+      projectId: "perudo-f7af1",
+      storageBucket: "perudo-f7af1.firebasestorage.app",
+      messagingSenderId: "215515744682",
+      appId: "1:215515744682:web:f03966bf1733da044003d3"
     };
-
-    // Segurança: trava se não colar config
-    const missing = !firebaseConfig || !firebaseConfig.projectId;
-    if (missing) {
-      alert("Você precisa colar seu firebaseConfig dentro do HTML (veja o bloco indicado).");
-    }
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -173,6 +335,8 @@
       el.prepend(line);
     }
 
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
     function renderDice(arr) {
       const box = $("myDice");
       box.innerHTML = "";
@@ -185,7 +349,6 @@
     }
 
     function higherThan(prev, next) {
-      // prev/next: {qty, face}
       if (!prev) return true;
       if (next.qty > prev.qty) return true;
       if (next.qty === prev.qty && next.face > prev.face) return true;
@@ -196,8 +359,8 @@
       return Object.values(players).reduce((acc,p) => acc + (p.diceCount||0), 0);
     }
 
+    // 1 é coringa sempre (simplificação)
     function countBid(players, bid) {
-      // ones are wild always (simplification)
       const face = bid.face;
       let total = 0;
       for (const p of Object.values(players)) {
@@ -217,6 +380,18 @@
 
     let unsub = null;
 
+    // UI state (local)
+    let myReveal = false;
+    let rollingLock = false;
+
+    function setRevealState(on) {
+      myReveal = on;
+      const cupArea = $("cupArea");
+      cupArea.classList.toggle("hiddenDice", !on);
+      cupArea.classList.toggle("revealedDice", on);
+      $("toggleRevealBtn").textContent = on ? "Esconder meus dados" : "Revelar meus dados";
+    }
+
     function roomRef() { return doc(db, "perudo_rooms", roomId); }
     function playerRef(pid) { return doc(db, "perudo_rooms", roomId, "players", pid); }
     function playersCol() { return collection(db, "perudo_rooms", roomId, "players"); }
@@ -224,6 +399,7 @@
     async function ensureRoomExists(newRoomId) {
       roomId = newRoomId;
       $("roomPill").textContent = "Sala: " + roomId;
+
       const snap = await getDoc(roomRef());
       if (!snap.exists()) {
         await setDoc(roomRef(), {
@@ -246,7 +422,6 @@
       if (!name) return alert("Digite seu nome.");
       if (!roomId) return alert("Sala inválida.");
 
-      // cria/atualiza player
       await setDoc(playerRef(meId), {
         id: meId,
         name,
@@ -258,7 +433,6 @@
 
       $("mePill").textContent = "Você: " + name;
 
-      // atualiza querystring
       const url = new URL(location.href);
       url.searchParams.set("room", roomId);
       history.replaceState({}, "", url.toString());
@@ -266,6 +440,9 @@
       $("copyLinkBtn").disabled = false;
       $("startBtn").disabled = false;
       $("resetBtn").disabled = false;
+
+      $("toggleRevealBtn").disabled = false;
+      setRevealState(false); // começa escondido
 
       subscribe();
     }
@@ -276,13 +453,15 @@
         if (!snap.exists()) return;
         const room = snap.data();
 
-        // players
         const pSnap = await getDocs(playersCol());
         const players = {};
         pSnap.forEach(d => players[d.id] = d.data());
 
         renderPlayers(room, players);
         updateUI(room, players);
+
+        // Render meus dados SEMPRE (visual local), mas pode estar escondido pela UI
+        renderDice(players[meId]?.lastRoll || []);
       });
     }
 
@@ -302,8 +481,6 @@
       }).join("");
     }
 
-    function escapeHtml(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
-
     function updateUI(room, players) {
       $("turnPill").textContent = "Vez: " + (players[room.turnOrder?.[room.turnIndex]]?.name || "—");
 
@@ -318,7 +495,7 @@
       const myDiceCount = me?.diceCount ?? 0;
       $("diceCountInfo").textContent = playing ? `Você tem ${myDiceCount} dado(s).` : "—";
 
-      // preencher qty
+      // qty options
       const maxPossible = Math.max(1, countTotalDice(players));
       const qtySel = $("qtySel");
       qtySel.innerHTML = "";
@@ -329,30 +506,31 @@
         qtySel.appendChild(opt);
       }
 
-      // habilita rolar
-      $("rollBtn").disabled = !playing || !me?.alive;
+      $("rollBtn").disabled = !playing || !me?.alive || rollingLock;
 
-      // lance/dudo só no meu turno
       $("qtySel").disabled = !myTurn;
       $("faceSel").disabled = !myTurn;
       $("bidBtn").disabled = !myTurn;
-      $("dudoBtn").disabled = !myTurn || !room.lastBid; // só pode dudo se houver lance
+      $("dudoBtn").disabled = !myTurn || !room.lastBid;
 
-      // último lance
       if (room.lastBid) {
         const by = players[room.lastBidBy]?.name || "—";
         $("lastBidInfo").innerHTML = `Último lance: <b>${room.lastBid.qty}</b> de <b>${room.lastBid.face}</b> (por <b>${escapeHtml(by)}</b>)`;
       } else {
         $("lastBidInfo").textContent = "Último lance: —";
       }
+    }
 
-      // render meus dados
-      renderDice(me?.lastRoll || []);
+    // ===== Copo: animação =====
+    async function animateCupShake() {
+      const cupArea = $("cupArea");
+      cupArea.classList.add("shaking");
+      await new Promise(r => setTimeout(r, 900));
+      cupArea.classList.remove("shaking");
     }
 
     // ===== Game actions =====
     async function startGame() {
-      // define ordem de turno com os jogadores vivos
       const pSnap = await getDocs(playersCol());
       const players = [];
       pSnap.forEach(d => players.push(d.data()));
@@ -360,7 +538,6 @@
       if (alive.length < 2) return alert("Precisa de pelo menos 2 jogadores.");
 
       const order = alive.map(p => p.id);
-      // embaralha simples
       for (let i=order.length-1;i>0;i--){
         const j = rand(i+1);
         [order[i], order[j]] = [order[j], order[i]];
@@ -377,6 +554,8 @@
         lastActionAt: nowISO()
       });
 
+      // começa escondido no meu cliente
+      setRevealState(false);
       pushLog("🎬 Jogo iniciado! Ordem sorteada.");
     }
 
@@ -397,26 +576,38 @@
         reveal: false,
         lastActionAt: nowISO()
       });
+      setRevealState(false);
       pushLog("♻️ Sala resetada.");
     }
 
     async function rollMyDice() {
+      if (rollingLock) return;
+      rollingLock = true;
+      $("rollBtn").disabled = true;
+
+      // sempre esconde antes de rolar (fica mais “jogo”)
+      setRevealState(false);
+
+      // anima copo
+      await animateCupShake();
+
       const snap = await getDoc(playerRef(meId));
-      if (!snap.exists()) return;
+      if (!snap.exists()) { rollingLock=false; return; }
       const me = snap.data();
-      if (!me.alive || (me.diceCount ?? 0) <= 0) return;
+      if (!me.alive || (me.diceCount ?? 0) <= 0) { rollingLock=false; return; }
 
       const dice = Array.from({length: me.diceCount}, () => rand(6)+1);
       await updateDoc(playerRef(meId), { lastRoll: dice });
 
-      pushLog("🎲 Você rolou seus dados (só você vê).");
+      pushLog("🎲 Você rolou seus dados. (toque em Revelar para ver)");
+      rollingLock = false;
+      $("rollBtn").disabled = false;
     }
 
     async function bid() {
       const roomSnap = await getDoc(roomRef());
       const room = roomSnap.data();
 
-      // checa turno
       const turnId = room.turnOrder?.[room.turnIndex];
       if (turnId !== meId) return alert("Não é sua vez.");
 
@@ -431,7 +622,6 @@
         lastBid: next,
         lastBidBy: meId,
         reveal: false,
-        // passa a vez
         turnIndex: (room.turnIndex + 1) % room.turnOrder.length,
         lastActionAt: nowISO()
       });
@@ -458,12 +648,8 @@
       const callerId = meId;
 
       const bidTrue = total >= bid.qty;
-
-      // Se lance era verdadeiro: quem deu DUDO perde um dado
-      // Se lance era falso: quem apostou perde um dado
       const loserId = bidTrue ? callerId : bidderId;
 
-      // aplica perda
       const loser = players[loserId];
       let newCount = Math.max(0, (loser.diceCount ?? 0) - 1);
       const eliminated = newCount === 0;
@@ -473,7 +659,6 @@
         alive: !eliminated
       });
 
-      // limpa lances e começa nova rodada: loser começa
       // remove eliminados da ordem
       const newPlayersSnap = await getDocs(playersCol());
       const newPlayers = {};
@@ -494,11 +679,11 @@
           reveal: true,
           lastActionAt: nowISO()
         });
-        pushLog(`🏆 ${winnerName} venceu! (A sala voltou ao lobby)`);
+        pushLog(`🏆 ${winnerName} venceu! (Sala voltou ao lobby)`);
         return;
       }
 
-      // posiciona loser como próximo a jogar (se ele ainda estiver vivo; se não, próximo na lista)
+      // loser começa a próxima rodada (se vivo; senão, o próximo)
       let startIdx = order.indexOf(loserId);
       if (startIdx < 0) startIdx = 0;
 
@@ -517,14 +702,18 @@
       const loserName  = players[loserId]?.name || "—";
 
       pushLog(`🧨 DUDO! ${callerName} duvidou do lance de ${bidderName}. Contagem: ${total} (inclui coringas 1).`);
-      pushLog(`${bidTrue ? "✅" : "❌"} O lance era ${bidTrue ? "VERDADEIRO" : "FALSO"}. ${loserName} perde 1 dado. ${eliminated ? "☠️ Eliminado!" : ""}`);
+      pushLog(`${bidTrue ? "✅" : "❌"} Lance ${bidTrue ? "VERDADEIRO" : "FALSO"}. ${loserName} perde 1 dado. ${eliminated ? "☠️ Eliminado!" : ""}`);
+      pushLog(`👀 (Momento de revelação) Agora é nova rodada — role de novo!`);
 
-      // opcional: limpar dados rolados (pra forçar nova rolagem)
+      // limpa dados rolados (força nova rolagem)
       for (const pid of Object.keys(newPlayers)) {
         if (newPlayers[pid]?.alive) {
           await updateDoc(playerRef(pid), { lastRoll: [] });
         }
       }
+
+      // no meu cliente, volta a esconder
+      setRevealState(false);
     }
 
     // ===== UI events =====
@@ -553,4 +742,41 @@
       const code = ($("roomInput").value.trim() || "").toUpperCase();
       if (!code) return alert("Digite o código da sala (ou clique Criar).");
       await ensureRoomExists(code);
-      await joi
+      await joinRoom();
+      pushLog("✅ Você entrou na sala.");
+    });
+
+    $("startBtn").addEventListener("click", startGame);
+    $("resetBtn").addEventListener("click", resetRoom);
+    $("rollBtn").addEventListener("click", rollMyDice);
+    $("bidBtn").addEventListener("click", bid);
+    $("dudoBtn").addEventListener("click", dudo);
+
+    $("toggleRevealBtn").addEventListener("click", () => {
+      setRevealState(!myReveal);
+    });
+
+    $("copyLinkBtn").addEventListener("click", async () => {
+      const url = new URL(location.href);
+      url.searchParams.set("room", roomId);
+      await navigator.clipboard.writeText(url.toString());
+      alert("Link copiado! Envie no WhatsApp.");
+    });
+
+    // init
+    setRoomFromInputsOrUrl();
+    if (roomId) {
+      await ensureRoomExists(roomId);
+      $("copyLinkBtn").disabled = false;
+      $("startBtn").disabled = false;
+      $("resetBtn").disabled = false;
+      $("toggleRevealBtn").disabled = false;
+      setRevealState(false);
+      subscribe();
+    } else {
+      // sem sala: deixa padrão escondido
+      setRevealState(false);
+    }
+  </script>
+</body>
+</html>
